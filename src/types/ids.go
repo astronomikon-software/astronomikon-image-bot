@@ -1,4 +1,4 @@
 package types
 
 type UserID = int64
-type ChatID = int64
+type GroupID = string

@@ -21,30 +21,28 @@ var ErrMaxUrlsExceeded = errors.New("post images: max urls per messages exceeded
 
 var isBusy = false
 
-func PostImages(ctx context.Context, b *bot.Bot, update *models.Update) {
-	userID := update.Message.Chat.ID
-
+func PostImages(ctx context.Context, b *bot.Bot, update *types.Update) error {
 	if isBusy {
-		_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
-			ChatID: userID,
+		_, err := b.SendMessage(ctx, &bot.SendMessageParams{
+			ChatID: update.From.ID,
 			Text:   messages.ServiceIsBusy,
 		})
-		return
+		return err
 	}
 	isBusy = true
 	defer func() { isBusy = false }()
 
-	groupID, err := getGroupIdOrNotify(ctx, b, userID)
+	groupID, err := getGroupIdOrNotify(ctx, b, update.From.ID)
 	if err != nil {
-		return
+		return err
 	}
 
-	urls, err := extractUrlsOrNotify(ctx, b, userID, update.Message.Text)
+	urls, err := extractUrlsOrNotify(ctx, b, update.From.ID, update.Text)
 	if err != nil {
-		return
+		return err
 	}
 
-	notifier := NewStatusNotifier(b, userID)
+	notifier := NewStatusNotifier(b, update.From.ID)
 	defer notifier.Finish(ctx)
 
 	for index, url := range urls {
@@ -52,19 +50,21 @@ func PostImages(ctx context.Context, b *bot.Bot, update *models.Update) {
 		err := postImage(ctx, b, url, groupID)
 		if err != nil {
 			_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
-				ChatID: userID,
+				ChatID: update.From.ID,
 				Text:   messages.LoadingImageFailed,
 			})
-			break
+			return err
 		}
 	}
+
+	return nil
 }
 
 func postImage(
 	ctx context.Context,
 	b *bot.Bot,
 	url string,
-	groupID types.ChatID,
+	groupID types.GroupID,
 ) error {
 	sender := func(ctx context.Context, image imgboard.Image) error {
 		imageData, err := readImageData(image)
@@ -99,7 +99,7 @@ func postImage(
 	return imgboard.PostImage(ctx, url, imgboard.FetchHtml, sender)
 }
 
-func getGroupIdOrNotify(ctx context.Context, b *bot.Bot, userID types.UserID) (types.ChatID, error) {
+func getGroupIdOrNotify(ctx context.Context, b *bot.Bot, userID types.UserID) (types.GroupID, error) {
 	groupID, err := managedgroup.Get()
 	if err != nil {
 		_, _ = b.SendMessage(ctx, &bot.SendMessageParams{

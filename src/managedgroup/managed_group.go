@@ -6,10 +6,9 @@ import (
 	"ortemios/imgbot/types"
 	"ortemios/imgbot/util"
 	"os"
-	"strconv"
 )
 
-const unset = types.ChatID(-1)
+const unset = ""
 
 var groupID = unset
 
@@ -21,12 +20,12 @@ func init() {
 
 var ErrGroupUnset = errors.New("group is not set")
 
-func Set(id types.ChatID) error {
+func Set(id string) error {
 	groupID = id
 	return writeToFile(id)
 }
 
-func Get() (types.ChatID, error) {
+func Get() (string, error) {
 	if groupID != unset {
 		return groupID, nil
 	} else {
@@ -40,11 +39,11 @@ func Get() (types.ChatID, error) {
 	}
 }
 
-func writeToFile(id types.ChatID) error {
-	return os.WriteFile(managedGroupFile, []byte(strconv.Itoa(int(id))), 0644)
+func writeToFile(id string) error {
+	return os.WriteFile(managedGroupFile, []byte(id), 0644)
 }
 
-func readFromFile() (types.ChatID, error) {
+func readFromFile() (string, error) {
 	file, err := os.Open(managedGroupFile)
 	if err != nil {
 		return unset, err
@@ -55,10 +54,5 @@ func readFromFile() (types.ChatID, error) {
 		return unset, err
 	}
 
-	gid, err := strconv.Atoi(string(text))
-	if err != nil {
-		return unset, err
-	}
-
-	return types.ChatID(gid), nil
+	return types.GroupID(text), nil
 }
