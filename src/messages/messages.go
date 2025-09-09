@@ -5,8 +5,9 @@ const (
 	GroupNotSet = "Группа не установлена."
 	GroupSet    = "Группа установлена."
 
-	ServiceIsBusy = "Сервис загружен, приходите позже."
-	AccessDenied  = "Доступ запрещён."
+	ServiceIsBusy   = "Сервис загружен, приходите позже."
+	AccessDenied    = "Доступ запрещён."
+	MaxUrlsExceeded = "Сообщение содержит слишком много адресов."
 
 	LoadingImage       = "Загружаю картинку %d/%d..."
 	LoadingDone        = "Загрузка завершена."

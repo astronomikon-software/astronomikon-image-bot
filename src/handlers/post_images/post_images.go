@@ -3,6 +3,7 @@ package post_images
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"ortemios/imgbot/imgboard"
@@ -13,6 +14,10 @@ import (
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )
+
+const maxUrlsPerMessage = 10
+
+var ErrMaxUrlsExceeded = errors.New("post images: max urls per messages exceeded")
 
 var isBusy = false
 
@@ -112,8 +117,16 @@ func extractUrlsOrNotify(ctx context.Context, b *bot.Bot, userID types.UserID, m
 			ChatID: userID,
 			Text:   messages.InvalidUrl,
 		})
+		return nil, err
 	}
-	return urls, err
+	if len(urls) > maxUrlsPerMessage {
+		_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
+			ChatID: userID,
+			Text:   messages.MaxUrlsExceeded,
+		})
+		return nil, ErrMaxUrlsExceeded
+	}
+	return urls, nil
 }
 
 func readImageData(image imgboard.Image) ([]byte, error) {
