@@ -1,0 +1,11 @@
+services:
+  image-uploader-bot:
+    build:
+      context: .
+    restart: unless-stopped
+    environment:
+      MANAGED_GROUP_FILE: /app/managed_group/id
+    env_file:
+      - .env
+    volumes:
+      - ./managed_group:/app/managed_group
