@@ -6,6 +6,7 @@ const (
 	GroupSet    = "Группа установлена."
 
 	ServiceIsBusy = "Сервис загружен, приходите позже."
+	AccessDenied  = "Доступ запрещён."
 
 	LoadingImage       = "Загружаю картинку %d/%d..."
 	LoadingDone        = "Загрузка завершена."
