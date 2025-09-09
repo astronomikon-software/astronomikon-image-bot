@@ -30,11 +30,14 @@ func isBlank(s string) bool {
 }
 
 func extractValidUrl(s string) (string, error) {
-	pattern := regexp.MustCompile("^https://betabooru\\.donmai\\.us/posts/\\d+")
-	res := pattern.FindString(strings.ToLower(strings.TrimSpace(s)))
-	if res == "" {
-		return "", fmt.Errorf("%v: %w", s, ErrInvalidPageUrl)
-	} else {
-		return res, nil
+	for _, pattern := range []*regexp.Regexp{
+		regexp.MustCompile("^https://betabooru\\.donmai\\.us/posts/\\d+"),
+		regexp.MustCompile("^https://danbooru\\.donmai\\.us/posts/\\d+"),
+	} {
+		res := pattern.FindString(strings.ToLower(strings.TrimSpace(s)))
+		if res != "" {
+			return res, nil
+		}
 	}
+	return "", fmt.Errorf("%v: %w", s, ErrInvalidPageUrl)
 }

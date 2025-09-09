@@ -43,19 +43,16 @@ func PostImages(ctx context.Context, b *bot.Bot, update *types.Update) error {
 	}
 
 	notifier := NewStatusNotifier(b, update.From.ID)
-	defer notifier.Finish(ctx)
 
 	for index, url := range urls {
 		notifier.Notify(ctx, index, len(urls))
 		err := postImage(ctx, b, url, groupID)
 		if err != nil {
-			_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
-				ChatID: update.From.ID,
-				Text:   messages.LoadingImageFailed,
-			})
+			notifier.Finish(ctx, false)
 			return err
 		}
 	}
+	notifier.Finish(ctx, true)
 
 	return nil
 }

@@ -40,7 +40,7 @@ func (n *StatusNotifier) Notify(ctx context.Context, index int, total int) {
 	})
 }
 
-func (n *StatusNotifier) Finish(ctx context.Context) {
+func (n *StatusNotifier) Finish(ctx context.Context, success bool) {
 	if n.bot == nil {
 		return
 	}
@@ -50,6 +50,12 @@ func (n *StatusNotifier) Finish(ctx context.Context) {
 	})
 	_, _ = n.bot.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID: n.userID,
-		Text:   messages.LoadingDone,
+		Text: func() string {
+			if success {
+				return messages.LoadingDone
+			} else {
+				return messages.LoadingImageFailed
+			}
+		}(),
 	})
 }
