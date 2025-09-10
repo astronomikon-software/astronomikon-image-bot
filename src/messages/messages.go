@@ -11,6 +11,8 @@ const (
 	MaxUrlsExceeded = "Сообщение содержит слишком много адресов."
 
 	LoadingImage       = "Загружаю картинку %d/%d..."
+	UploadingImagesSD  = "Выгружаю картинки в обычном качестве..."
+	UploadingImagesHD  = "Выгружаю картинки в высоком качестве..."
 	LoadingDone        = "Загрузка завершена."
 	LoadingImageFailed = "Загрузка не удалась."
 )

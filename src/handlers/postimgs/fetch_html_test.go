@@ -1,6 +1,7 @@
-package imgboard
+package postimgs
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -44,7 +45,7 @@ func TestFetchHtml(t *testing.T) {
 			}))
 			defer server.Close()
 			requestUrl := server.URL + testCase.reqPath
-			res, err := FetchHtml(requestUrl)
+			res, err := FetchHtml(context.Background(), requestUrl)
 			assert.Equal(t, res, testCase.expectedRes)
 			assert.ErrorIs(t, err, testCase.expectedErr)
 		})

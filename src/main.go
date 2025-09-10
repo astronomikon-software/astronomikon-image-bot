@@ -3,8 +3,9 @@ package main
 import (
 	"context"
 	"log"
-	"ortemios/imgbot/handlers"
-	"ortemios/imgbot/handlers/post_images"
+	"math/rand/v2"
+	"ortemios/imgbot/handlers/postimgs"
+	"ortemios/imgbot/handlers/setgroup"
 	"ortemios/imgbot/messages"
 	"ortemios/imgbot/types"
 	"ortemios/imgbot/util"
@@ -34,8 +35,9 @@ func main() {
 
 	opts := []bot.Option{
 		bot.WithDefaultHandler(func(ctx context.Context, b *bot.Bot, update *models.Update) {
-			if b != nil {
-				err := handler(ctx, b, buildUpdate(update))
+			if u := buildUpdate(update); b != nil && u != nil {
+				logUpdateReceived(u)
+				err := handler(ctx, b, u)
 				if err != nil {
 					log.Println(err)
 				}
@@ -52,10 +54,8 @@ func main() {
 }
 
 func handler(ctx context.Context, b *bot.Bot, update *types.Update) error {
-	if b == nil || update == nil {
-		return nil
-	}
 	if !isUserAllowed(update.From) {
+		logAccessDenied(update)
 		_, err := b.SendMessage(ctx, &bot.SendMessageParams{
 			ChatID: update.From.ID,
 			Text:   messages.AccessDenied,
@@ -64,16 +64,20 @@ func handler(ctx context.Context, b *bot.Bot, update *types.Update) error {
 	}
 	text := strings.TrimSpace(update.Text)
 	if strings.HasPrefix(text, SetGroupCommand) {
-		return handlers.SetGroup(ctx, b, update)
+		return setgroup.SetGroup(ctx, b, update)
 	} else if len(text) > 0 {
-		return post_images.PostImages(ctx, b, update)
+		return postimgs.PostImages(ctx, b, update)
+	} else {
+		logNoHandlerMatched(update)
 	}
 	return nil
 }
 
 func buildUpdate(update *models.Update) *types.Update {
+	var id = rand.Int64()
 	if update.Message != nil {
 		return &types.Update{
+			ID:     id,
 			ChatID: strconv.Itoa(int(update.Message.Chat.ID)),
 			From:   buildUser(update.Message.From),
 			Text:   update.Message.Text,
@@ -93,4 +97,26 @@ func isUserAllowed(user *types.User) bool {
 		}
 	}
 	return false
+}
+
+func logUpdateReceived(update *types.Update) {
+	log.Printf("[%v] update received {from: %v %q, to: %v, text: %#q}\n",
+		update.ID,
+		update.From.ID,
+		update.From.Username,
+		update.ChatID,
+		update.Text,
+	)
+}
+
+func logAccessDenied(update *types.Update) {
+	log.Printf("[%v] access denied to %v %q",
+		update.ID,
+		update.From.ID,
+		update.From.Username,
+	)
+}
+
+func logNoHandlerMatched(update *types.Update) {
+	log.Printf("[%v] no handler matched", update.ID)
 }

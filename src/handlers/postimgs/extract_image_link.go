@@ -1,4 +1,4 @@
-package imgboard
+package postimgs
 
 import (
 	"errors"
