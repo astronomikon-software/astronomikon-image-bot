@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"ortemios/imgbot/handlers/postimgs/imgproc"
 	"ortemios/imgbot/managedgroup"
 	"ortemios/imgbot/messages"
 	"ortemios/imgbot/types"
@@ -16,6 +17,7 @@ import (
 )
 
 const maxUrlsPerMessage = 10
+const maxImageDimensionsSum = 10000
 
 var logPrefix = "PostImages"
 
@@ -51,8 +53,8 @@ func PostImages(ctx context.Context, b *bot.Bot, update *types.Update) error {
 		images := make([]*Image, 0, len(urls))
 		for res := range loadImages(ctx, urls) {
 			if res.err != nil {
-				logImageLoadFailed(update, res.url)
-				return err
+				logImageLoadFailed(update, res.url, err)
+				return res.err
 			} else {
 				notifier.NotifyCount(ctx, len(images), len(urls))
 				images = append(images, res.image)
@@ -60,11 +62,18 @@ func PostImages(ctx context.Context, b *bot.Bot, update *types.Update) error {
 			}
 		}
 
+		resizedImages, err := resizeImages(images)
+		if err != nil {
+			logError(update, err)
+			return err
+		}
+
 		logUploadingSD(update)
 		notifier.NotifyUploadingSD(ctx)
+
 		_, err = b.SendMediaGroup(ctx, &bot.SendMediaGroupParams{
 			ChatID: groupID,
-			Media: util.Map(images, func(image *Image) models.InputMedia {
+			Media: util.Map(resizedImages, func(image *Image) models.InputMedia {
 				return &models.InputMediaPhoto{
 					Media:           fmt.Sprintf("attach://%s", image.Filename),
 					MediaAttachment: bytes.NewReader(image.Data),
@@ -111,12 +120,12 @@ func loadImages(ctx context.Context, urls []string) chan loadImageResult {
 	go func() {
 		defer close(out)
 		for _, url := range urls {
-			image, err := FetchData(ctx, url)
+			image, err := LoadImage(ctx, url)
 			if err != nil {
 				out <- loadImageResult{err: err, url: url}
-				return
+			} else {
+				out <- loadImageResult{image: image, url: url}
 			}
-			out <- loadImageResult{image: image, url: url}
 		}
 	}()
 	return out
@@ -155,6 +164,22 @@ func extractUrlsOrNotify(ctx context.Context, b *bot.Bot, update *types.Update) 
 	return urls, nil
 }
 
+func resizeImages(images []*Image) ([]*Image, error) {
+	out := make([]*Image, 0)
+	for index, image := range images {
+		resizedImageData, err := imgproc.ResizeImage(image.Data, maxImageDimensionsSum)
+		if err != nil {
+			return nil, fmt.Errorf("error resizing image [index=%v]: %w", index, err)
+		}
+		out = append(out, &Image{
+			Url:      image.Url,
+			Filename: image.Filename,
+			Data:     resizedImageData,
+		})
+	}
+	return out, nil
+}
+
 func logCalled(update *types.Update) {
 	log.Printf("[%v %s] called\n", update.ID, logPrefix)
 }
@@ -179,8 +204,8 @@ func logImageLoaded(update *types.Update, url string) {
 	log.Printf("[%v %s] %q image loaded\n", update.ID, logPrefix, url)
 }
 
-func logImageLoadFailed(update *types.Update, url string) {
-	log.Printf("[%v %s] %q image loading failed\n", update.ID, logPrefix, url)
+func logImageLoadFailed(update *types.Update, url string, err error) {
+	log.Printf("[%v %s] %q image loading failed (%v)\n", update.ID, logPrefix, url, err)
 }
 
 func logUploadingSD(update *types.Update) {
@@ -197,6 +222,10 @@ func logUploadingHD(update *types.Update) {
 
 func logUploadingHDFailed(update *types.Update) {
 	log.Printf("[%v %s] uploading HD failed\n", update.ID, logPrefix)
+}
+
+func logError(update *types.Update, err error) {
+	log.Printf("[%v %s] %v\n", update.ID, logPrefix, err)
 }
 
 func logFinished(update *types.Update, success bool) {

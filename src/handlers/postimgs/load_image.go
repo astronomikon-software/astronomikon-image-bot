@@ -13,7 +13,7 @@ type Image struct {
 	Data     []byte
 }
 
-func FetchData(ctx context.Context, pageUrl string) (*Image, error) {
+func LoadImage(ctx context.Context, pageUrl string) (*Image, error) {
 	logFetching(pageUrl)
 	html, err := FetchHtml(ctx, pageUrl)
 	if err != nil {
