@@ -31,7 +31,6 @@ func ResizeImage(imgBytes []byte, maxSum int, maxSize int) ([]byte, error) {
 }
 
 func ScaleImage(img image.Image, scaleFactor float64) ([]byte, error) {
-
 	newImage := imaging.Resize(
 		img,
 		int(float64(img.Bounds().Dx())*scaleFactor),
