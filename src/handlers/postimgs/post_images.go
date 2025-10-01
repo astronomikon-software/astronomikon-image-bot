@@ -18,6 +18,7 @@ import (
 
 const maxUrlsPerMessage = 10
 const maxImageDimensionsSum = 10000
+const maxImageSizeBytes = 10485760
 
 var logPrefix = "PostImages"
 
@@ -167,7 +168,11 @@ func extractUrlsOrNotify(ctx context.Context, b *bot.Bot, update *types.Update) 
 func resizeImages(images []*Image) ([]*Image, error) {
 	out := make([]*Image, 0)
 	for index, image := range images {
-		resizedImageData, err := imgproc.ResizeImage(image.Data, maxImageDimensionsSum)
+		resizedImageData, err := imgproc.ResizeImage(
+			image.Data,
+			maxImageDimensionsSum,
+			maxImageSizeBytes,
+		)
 		if err != nil {
 			return nil, fmt.Errorf("error resizing image [index=%v]: %w", index, err)
 		}
