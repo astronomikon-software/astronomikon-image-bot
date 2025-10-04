@@ -88,12 +88,28 @@ func PostImages(ctx context.Context, b *bot.Bot, update *types.Update) error {
 
 		logUploadingHD(update)
 		notifier.NotifyUploadingHD(ctx)
+
+		documentMessages := make([]*models.Message, 0)
+		for _, image := range images {
+			msg, err := b.SendDocument(ctx, &bot.SendDocumentParams{
+				ChatID: update.ChatID,
+				Document: &models.InputFileUpload{
+					Filename: image.Filename,
+					Data:     bytes.NewReader(image.Data),
+				},
+			})
+			if err != nil {
+				logUploadingHDFailed(update)
+				return err
+			}
+			documentMessages = append(documentMessages, msg)
+		}
+
 		_, err = b.SendMediaGroup(ctx, &bot.SendMediaGroupParams{
 			ChatID: groupID,
-			Media: util.Map(images, func(image *Image) models.InputMedia {
+			Media: util.Map(documentMessages, func(msg *models.Message) models.InputMedia {
 				return &models.InputMediaDocument{
-					Media:           fmt.Sprintf("attach://%s", image.Filename),
-					MediaAttachment: bytes.NewReader(image.Data),
+					Media: msg.Document.FileID,
 				}
 			}),
 		})
