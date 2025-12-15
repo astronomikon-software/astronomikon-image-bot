@@ -15,4 +15,5 @@ const (
 	UploadingImagesHD  = "Выгружаю картинки в высоком качестве..."
 	LoadingDone        = "Загрузка завершена."
 	LoadingImageFailed = "Загрузка не удалась."
+	ImageLinkNotFound  = "Не удалось найти ссылку на изображение."
 )

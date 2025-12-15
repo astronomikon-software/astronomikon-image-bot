@@ -37,16 +37,6 @@ func (n *StatusNotifier) NotifyUploadingHD(ctx context.Context) {
 	n.updateMessage(ctx, messages.UploadingImagesHD)
 }
 
-func (n *StatusNotifier) Finish(ctx context.Context, success bool) {
-	n.updateMessage(ctx, func() string {
-		if success {
-			return messages.LoadingDone
-		} else {
-			return messages.LoadingImageFailed
-		}
-	}())
-}
-
 func (n *StatusNotifier) updateMessage(ctx context.Context, text string) {
 	if n.bot == nil {
 		return

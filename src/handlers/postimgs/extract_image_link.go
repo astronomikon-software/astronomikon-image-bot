@@ -8,20 +8,27 @@ import (
 var ErrLinkNotFound = errors.New("image link not found")
 
 func ExtractImageUrl(html string) (string, error) {
-	tagHtml := extractImageTag(html)
-	if tagHtml == "nil" {
+	pattern := regexp.MustCompile("https://cdn\\.donmai\\.us/original/[\\w/]*\\.[\\wd]*")
+	match := pattern.FindStringSubmatch(html)
+	if len(match) == 0 {
 		return "", ErrLinkNotFound
-	}
-	pattern := regexp.MustCompile("href=\"(.*?)\"")
-	match := pattern.FindStringSubmatch(tagHtml)
-	if len(match) >= 2 {
-		return match[1], nil
 	} else {
-		return "", ErrLinkNotFound
+		return findLongestItem(match), nil
 	}
 }
 
-func extractImageTag(html string) string {
-	pattern := regexp.MustCompile("<a class=\"image-view-original-link\" .*</a>")
-	return pattern.FindString(html)
+func findLongestItem(items []string) string {
+	if len(items) == 0 {
+		return ""
+	}
+	bestIndex := 0
+	maxLen := len(items[0])
+	for i, item := range items {
+		curLen := len(item)
+		if curLen > maxLen {
+			bestIndex = i
+			maxLen = curLen
+		}
+	}
+	return items[bestIndex]
 }

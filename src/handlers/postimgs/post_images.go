@@ -122,8 +122,19 @@ func PostImages(ctx context.Context, b *bot.Bot, update *types.Update) error {
 	}()
 
 	logFinished(update, err == nil)
-	notifier.Finish(ctx, err == nil)
+	notifier.updateMessage(ctx, getFinalStatusMessage(err))
 	return err
+}
+
+func getFinalStatusMessage(err error) string {
+
+	if err == nil {
+		return messages.LoadingDone
+	} else if errors.Is(err, ErrLinkNotFound) {
+		return messages.ImageLinkNotFound
+	} else {
+		return messages.LoadingImageFailed
+	}
 }
 
 type loadImageResult struct {
