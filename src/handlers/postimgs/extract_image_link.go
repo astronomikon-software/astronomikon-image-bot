@@ -8,8 +8,8 @@ import (
 var ErrLinkNotFound = errors.New("image link not found")
 
 func ExtractImageUrl(html string) (string, error) {
-	pattern := regexp.MustCompile("https://cdn\\.donmai\\.us/original/[\\w/]*\\.[\\wd]*")
-	match := pattern.FindStringSubmatch(html)
+	pattern := regexp.MustCompile("https://cdn\\.donmai\\.us/original/[_\\w/]*\\.[\\wd]*")
+	match := pattern.FindAllString(html, -1)
 	if len(match) == 0 {
 		return "", ErrLinkNotFound
 	} else {
